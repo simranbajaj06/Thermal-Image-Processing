@@ -1,0 +1,32 @@
+{
+  "name": "seq2_P12_HR_dynamic",
+  "fps": 9.0,
+  "frames": 720,
+  "noise_sigma": 0.002040447803696071,
+  "slope_threshold": 0.002307553750556925,
+  "phases": {
+    "t_cool_start": 0,
+    "t_min": 2,
+    "has_rewarm": true,
+    "has_cool": false
+  },
+  "text": "Sequence of 720 frames (80.0 s at 9 fps). ROI = 17% of the image. Values are normalized (0-1), not degrees.\nREWARMING (frames 2-719): mean change +0.654; max 98% of ROI rising at the same time.\nWarming front travels toward down (259 deg), no direction (coherence R=0.14), median speed ~3.1 px/s.\nSecond method (gradient flow): 266 deg (R=0.14); the two methods differ by 7 deg.\nInterpretation: surface-temperature pattern related to perfusion; it is NOT a direct measurement of blood flow.",
+  "rewarming": {
+    "arrival_time_method": {
+      "mean_deg": 259.4205198346059,
+      "R": 0.13697699800623797,
+      "n": 2199,
+      "text": "down"
+    },
+    "gradient_flow_method": {
+      "mean_deg": 266.0648747751808,
+      "R": 0.14498554490715337,
+      "n": 1886,
+      "text": "down"
+    },
+    "speed_arrival_px_per_s": 3.073103427886963,
+    "speed_gradient_px_per_s": 0.5366075038909912,
+    "agreement_deg": 6.644354940574885,
+    "mean_change": 0.6542094945907593
+  }
+}

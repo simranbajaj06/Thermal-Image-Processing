@@ -1,0 +1,50 @@
+{
+  "name": "seq1_P11_HR_dynamic",
+  "fps": 5.0,
+  "frames": 204,
+  "noise_sigma": 0.009928608836329724,
+  "slope_threshold": 0.014199835633040407,
+  "phases": {
+    "t_cool_start": 18,
+    "t_min": 63,
+    "has_rewarm": true,
+    "has_cool": true
+  },
+  "text": "Sequence of 204 frames (40.8 s at 5 fps). ROI = 44% of the image. Values are normalized (0-1), not degrees.\nCOOLING (frames 18-63): mean change -0.498; max 100% of ROI falling at the same time.\nREWARMING (frames 63-203): mean change +0.498; max 58% of ROI rising at the same time.\nWarming front travels toward upper-right (60 deg), clear direction (coherence R=0.99), median speed ~6.1 px/s.\nSecond method (gradient flow): 53 deg (R=0.63); the two methods differ by 7 deg.\nInterpretation: surface-temperature pattern related to perfusion; it is NOT a direct measurement of blood flow.",
+  "rewarming": {
+    "arrival_time_method": {
+      "mean_deg": 59.72899105218063,
+      "R": 0.9945174919361368,
+      "n": 7488,
+      "text": "upper-right"
+    },
+    "gradient_flow_method": {
+      "mean_deg": 53.08699559844305,
+      "R": 0.6316069298449203,
+      "n": 7257,
+      "text": "upper-right"
+    },
+    "speed_arrival_px_per_s": 6.070976734161377,
+    "speed_gradient_px_per_s": 5.583981037139893,
+    "agreement_deg": 6.641995453737593,
+    "mean_change": 0.4981151819229126
+  },
+  "cooling": {
+    "arrival_time_method": {
+      "mean_deg": 46.573455169466904,
+      "R": 0.04960787066691296,
+      "n": 7486,
+      "text": "upper-right"
+    },
+    "gradient_flow_method": {
+      "mean_deg": 185.08154544314894,
+      "R": 0.1535704775082299,
+      "n": 2167,
+      "text": "left"
+    },
+    "speed_arrival_px_per_s": 138.86610412597656,
+    "speed_gradient_px_per_s": 0.8474663496017456,
+    "agreement_deg": 138.508090273682,
+    "mean_change": -0.49796900153160095
+  }
+}

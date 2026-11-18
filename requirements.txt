@@ -1,0 +1,9 @@
+numpy
+scipy
+opencv-python
+matplotlib
+pandas
+imageio
+imageio-ffmpeg
+streamlit      # only for the demo app
+torch          # only for the optional super-resolution training

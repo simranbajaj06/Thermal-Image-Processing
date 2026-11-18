@@ -1,0 +1,5 @@
+Sequence of 720 frames (80.0 s at 9 fps). ROI = 17% of the image. Values are normalized (0-1), not degrees.
+REWARMING (frames 2-719): mean change +0.654; max 98% of ROI rising at the same time.
+Warming front travels toward down (259 deg), no direction (coherence R=0.14), median speed ~3.1 px/s.
+Second method (gradient flow): 266 deg (R=0.14); the two methods differ by 7 deg.
+Interpretation: surface-temperature pattern related to perfusion; it is NOT a direct measurement of blood flow.

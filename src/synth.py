@@ -16,7 +16,7 @@ import cv2
 
 
 def make_synthetic(angle_deg=45.0, speed=6.0, noise=0.01, size=128, fps=5.0, seed=0,
-                   jitter_px=0.0, depth=0.25, tau=1.0):
+                   jitter_px=0.0, depth=0.25, tau=1.0, pattern="planar"):
     rng = np.random.default_rng(seed)
     H = W = size
     yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
@@ -25,7 +25,11 @@ def make_synthetic(angle_deg=45.0, speed=6.0, noise=0.01, size=128, fps=5.0, see
 
     th = np.deg2rad(angle_deg)
     n = np.array([np.cos(th), -np.sin(th)], np.float32)          # (nx, ny) in IMAGE coordinates (y down)
-    p = (xx - cx) * n[0] + (yy - cy) * n[1]                      # position along the travel direction
+    if pattern == "radial":      # warming spreads OUTWARD from one focus point (like a hot vessel / injection site)
+        fx, fy = cx + 0.12 * W, cy - 0.08 * H
+        p = np.hypot(xx - fx, yy - fy)
+    else:                        # planar front travelling along angle_deg
+        p = (xx - cx) * n[0] + (yy - cy) * n[1]                  # position along the travel direction
     pmin, pmax = p[mask].min(), p[mask].max()
 
     t_base, t_cool = 4.0, 8.0                                    # seconds
@@ -54,6 +58,6 @@ def make_synthetic(angle_deg=45.0, speed=6.0, noise=0.01, size=128, fps=5.0, see
             img = cv2.warpAffine(img, M, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
         frames.append(img)
     T = np.clip(np.stack(frames), 0, 1).astype(np.float32)
-    info = dict(angle_deg=float(angle_deg), speed=float(speed), fps=float(fps), noise=float(noise),
+    info = dict(pattern=pattern, focus_xy=((fx, fy) if pattern == 'radial' else None), angle_deg=float(angle_deg), speed=float(speed), fps=float(fps), noise=float(noise),
                 t_rewarm_start_s=float(t_rew0), arrival_gt=np.where(mask, ta, np.nan))
     return T, mask, info

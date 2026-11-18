@@ -29,6 +29,8 @@ with st.sidebar:
         scale = st.select_slider("Resize factor (smaller = faster)", [0.25, 0.5, 0.75, 1.0], 0.5)
         stride = st.number_input("Use every n-th frame", 1, 50, 1)
         true_angle, noise = None, None
+    roi_mode = st.radio("Region of interest", ["auto", "full"], index=0, horizontal=True,
+                        help="auto = find a body on a background; full = whole frame is skin (close-up recordings)")
     register = st.checkbox("Motion correction (slower)", False)
     run_btn = st.button("Run analysis", type="primary")
 
@@ -41,7 +43,7 @@ if run_btn:
             T, _ = io_utils.load_sequence(folder, int(stride), None, scale)
             name, f_eff = os.path.basename(os.path.normpath(folder)), fps / int(stride)
         out = os.path.join("results", "app_run")
-        res = pipeline.run(T, f_eff, out, name, cfg=pipeline.Config(register=register),
+        res = pipeline.run(T, f_eff, out, name, cfg=pipeline.Config(register=register, roi_mode=roi_mode),
                            video_stride=max(1, len(T) // 80))
     st.session_state["out"] = out
     st.session_state["res"] = res

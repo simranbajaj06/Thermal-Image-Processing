@@ -2,31 +2,92 @@
   "name": "seq1_P11_HR_dynamic",
   "fps": 9.0,
   "frames": 368,
-  "noise_sigma": 0.0029958101752277453,
-  "slope_threshold": 0.00338797836106426,
+  "noise_sigma": 0.0018573571193170643,
+  "slope_threshold": 0.002100495479002265,
   "phases": {
     "t_cool_start": 0,
     "t_min": 2,
     "has_rewarm": true,
     "has_cool": false
   },
-  "text": "Sequence of 368 frames (40.9 s at 9 fps). ROI = 17% of the image. Values are normalized (0-1), not degrees.\nREWARMING (frames 2-367): mean change +0.191; max 97% of ROI rising at the same time.\nWarming front travels toward lower-right (301 deg), no direction (coherence R=0.18), median speed ~1.9 px/s.\nSecond method (gradient flow): 334 deg (R=0.38); the two methods differ by 33 deg.\nInterpretation: surface-temperature pattern related to perfusion; it is NOT a direct measurement of blood flow.",
+  "text": "Sequence of 368 frames (40.9 s at 9 fps). ROI = 89% of the image. Values are normalized (0-1), not degrees.\nREWARMING (frames 2-367): mean change +0.231; max 100% of ROI rising at the same time.\nPattern: no coherent propagation (R=0.08, outward alignment 0.11, convergence 0.11). Recovery is spatially heterogeneous and no travelling front can be resolved.\nSecond method (gradient flow): 298 deg (R=0.30); mean directions of the two methods differ by 174 deg (only meaningful when the pattern is 'uniform').\nInterpretation: surface-temperature pattern related to perfusion; it is NOT a direct measurement of blood flow.",
   "rewarming": {
     "arrival_time_method": {
-      "mean_deg": 300.98144206504975,
-      "R": 0.18370291799991473,
-      "n": 2259,
-      "text": "lower-right"
+      "mean_deg": 123.44020389139503,
+      "R": 0.08016315584300773,
+      "n": 11532,
+      "text": "upper-left"
     },
     "gradient_flow_method": {
-      "mean_deg": 333.7120048528085,
-      "R": 0.3827532946262604,
-      "n": 2003,
+      "mean_deg": 297.63490372209804,
+      "R": 0.3043273041346627,
+      "n": 7735,
       "text": "lower-right"
     },
-    "speed_arrival_px_per_s": 1.9148741960525513,
-    "speed_gradient_px_per_s": 0.18235556781291962,
-    "agreement_deg": 32.73056278775874,
-    "mean_change": 0.1905347853899002
-  }
+    "speed_arrival_px_per_s": 5.63934326171875,
+    "speed_gradient_px_per_s": 0.2766622006893158,
+    "agreement_deg": 174.19469983070303,
+    "mean_change": 0.23117879033088684,
+    "pattern": "mixed",
+    "n_early_foci": 5,
+    "n_late_foci": 5,
+    "outward_alignment": 0.11250771643934103,
+    "convergence_alignment": 0.11349919884158802,
+    "early_foci_xy_t": [
+      [
+        1,
+        18,
+        12.734742164611816
+      ],
+      [
+        99,
+        65,
+        16.487762451171875
+      ],
+      [
+        91,
+        42,
+        16.822771072387695
+      ],
+      [
+        27,
+        107,
+        16.862852096557617
+      ],
+      [
+        48,
+        87,
+        16.884780883789062
+      ]
+    ],
+    "late_foci_xy_t": [
+      [
+        18,
+        28,
+        30.704837799072266
+      ],
+      [
+        57,
+        40,
+        30.1095027923584
+      ],
+      [
+        107,
+        33,
+        22.311702728271484
+      ],
+      [
+        107,
+        18,
+        22.283416748046875
+      ],
+      [
+        94,
+        52,
+        22.28181266784668
+      ]
+    ]
+  },
+  "roi_mode": "full",
+  "roi_fraction": 0.8919753086419753
 }

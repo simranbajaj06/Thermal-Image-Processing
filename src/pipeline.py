@@ -29,6 +29,7 @@ class Config:
     register: bool = False         # motion correction (slow, enable if the body moves)
     erode_px: int = 3              # shrink ROI from the border
     body_is_brighter: bool = True
+    roi_mode: str = "auto"         # "auto" = find a body on a background, "full" = whole frame is skin (close-ups)
 
 
 def analyze(T_raw, fps, mask=None, cfg: Config = None, verbose=True):
@@ -47,9 +48,15 @@ def analyze(T_raw, fps, mask=None, cfg: Config = None, verbose=True):
 
     # ---- STEP 3: ROI --------------------------------------------------------------------------------
     if mask is None:
-        mask = roi.auto_roi(T, cfg.body_is_brighter, cfg.erode_px)
+        if cfg.roi_mode == "full":
+            mask = roi.full_roi(T.shape[1:], cfg.erode_px)
+        else:
+            mask = roi.auto_roi(T, cfg.body_is_brighter, cfg.erode_px)
+            if mask.mean() < 0.35:
+                log("WARNING: the automatic ROI covers less than 35% of the image. If the skin fills the whole frame "
+                    "(close-up recordings) use  --roi full  instead.")
     res["mask"] = mask
-    log(f"ROI covers {mask.mean() * 100:.1f}% of the image")
+    log(f"ROI ({cfg.roi_mode}) covers {mask.mean() * 100:.1f}% of the image")
 
     # ---- STEP 4: temporal smoothing, slope maps, noise ---------------------------------------------
     win = preprocess.odd_window(cfg.smooth_win_s, fps, max_frames=len(T) - 1)
@@ -77,6 +84,11 @@ def analyze(T_raw, fps, mask=None, cfg: Config = None, verbose=True):
         ta, amp, valid = flow.arrival_time(Ts, fps, mask, a, b, cfg.arrival_frac, min_amp=min_amp)
         fb = flow.front_direction_from_arrival(ta, valid, cfg.arrival_sigma)
         stB = flow.summarize_direction(fb["angle"])
+        src = flow.find_foci(fb["ta_smooth"], "min")
+        snk = flow.find_foci(fb["ta_smooth"], "max")
+        out_idx = flow.focal_alignment(fb["gx"], fb["gy"], fb["good"], src, outward=True)
+        conv_idx = flow.focal_alignment(fb["gx"], fb["gy"], fb["good"], snk, outward=False)
+        pattern = flow.classify_pattern(stB["R"], out_idx, conv_idx)
         mvx, mvy, w, samples = flow.aggregate_lk(Ts, slope, mask, a, b, cfg.lk_win)
         angA = flow.vec_to_angle(mvx, mvy)
         # only trust pixels that were crossed by a front in this phase (valid) and have evidence
@@ -87,7 +99,8 @@ def analyze(T_raw, fps, mask=None, cfg: Config = None, verbose=True):
                   A_ok=okA, A_samples=samples, statsB=stB, statsA=stA,
                   speedB_med=float(np.nanmedian(fb["speed"])) if np.isfinite(fb["speed"]).any() else np.nan,
                   speedA_med=float(np.nanmedian(spdA[okA])) if okA.any() else np.nan,
-                  mean_change=float(np.nanmean(amp[mask])))
+                  mean_change=float(np.nanmean(amp[mask])),
+                  sources=src, sinks=snk, outward_alignment=out_idx, convergence_alignment=conv_idx, pattern=pattern)
         pr["agreement_deg"] = (float(flow.angular_diff(stA["mean_deg"], stB["mean_deg"]))
                                if np.isfinite(stA["mean_deg"]) and np.isfinite(stB["mean_deg"]) else np.nan)
         res["phase_results"][name] = pr
@@ -107,14 +120,30 @@ def make_summary(res, n_frames):
                      f"max {tb.pct_falling.max():.0f}% of ROI falling at the same time.")
     if pr:
         s = pr["statsB"]
-        coher = "clear" if s["R"] > 0.7 else "weak" if s["R"] > 0.4 else "no"
         lines.append(f"REWARMING (frames {pr['a']}-{pr['b']}): mean change {pr['mean_change']:+.3f}; "
                      f"max {tb.pct_rising.max():.0f}% of ROI rising at the same time.")
-        lines.append(f"Warming front travels toward {s['text']} ({s['mean_deg']:.0f} deg), {coher} direction "
-                     f"(coherence R={s['R']:.2f}), median speed ~{pr['speedB_med']:.1f} px/s.")
+        ns, nk = len(pr["sources"]), len(pr["sinks"])
+        if pr["pattern"] == "uniform":
+            lines.append(f"Pattern: ONE dominant direction - the warming front travels toward {s['text']} "
+                         f"({s['mean_deg']:.0f} deg), coherence R={s['R']:.2f}, median speed ~{pr['speedB_med']:.1f} px/s.")
+        elif pr["pattern"] == "focal":
+            parts = []
+            if ns and np.isfinite(pr["outward_alignment"]) and pr["outward_alignment"] >= 0.3:
+                parts.append(f"{ns} early-recovery focus/foci from which the arrows point away "
+                             f"(alignment {pr['outward_alignment']:.2f})")
+            if nk and np.isfinite(pr["convergence_alignment"]) and pr["convergence_alignment"] >= 0.3:
+                parts.append(f"{nk} late-recovery focus/foci toward which the arrows converge "
+                             f"(alignment {pr['convergence_alignment']:.2f})")
+            lines.append(f"Pattern: NO single direction (R={s['R']:.2f}); recovery is organised around "
+                         + " and ".join(parts) + f". Median speed ~{pr['speedB_med']:.1f} px/s.")
+        else:
+            lines.append(f"Pattern: no coherent propagation (R={s['R']:.2f}, outward alignment "
+                         f"{pr['outward_alignment']:.2f}, convergence {pr['convergence_alignment']:.2f}). Recovery is spatially "
+                         "heterogeneous and no travelling front can be resolved.")
         a = pr["statsA"]
         lines.append(f"Second method (gradient flow): {a['mean_deg']:.0f} deg (R={a['R']:.2f}); "
-                     f"the two methods differ by {pr['agreement_deg']:.0f} deg.")
+                     f"mean directions of the two methods differ by {pr['agreement_deg']:.0f} deg "
+                     "(only meaningful when the pattern is 'uniform').")
     else:
         lines.append("No rewarming phase found in this recording.")
     lines.append("Interpretation: surface-temperature pattern related to perfusion; it is NOT a direct "
@@ -138,7 +167,11 @@ def run(T_raw, fps, out_dir, name="sequence", mask=None, cfg=None, make_video=Tr
     for ph, pr in res["phase_results"].items():
         summ[ph] = dict(arrival_time_method=pr["statsB"], gradient_flow_method=pr["statsA"],
                         speed_arrival_px_per_s=pr["speedB_med"], speed_gradient_px_per_s=pr["speedA_med"],
-                        agreement_deg=pr["agreement_deg"], mean_change=pr["mean_change"])
+                        agreement_deg=pr["agreement_deg"], mean_change=pr["mean_change"], pattern=pr["pattern"],
+                        n_early_foci=len(pr["sources"]), n_late_foci=len(pr["sinks"]),
+                        outward_alignment=pr["outward_alignment"], convergence_alignment=pr["convergence_alignment"],
+                        early_foci_xy_t=pr["sources"], late_foci_xy_t=pr["sinks"])
+    summ["roi_mode"] = res["cfg"]["roi_mode"]; summ["roi_fraction"] = float(res["mask"].mean())
     with open(os.path.join(out_dir, "summary.json"), "w") as f:
         json.dump(summ, f, indent=2, default=lambda o: None if (isinstance(o, float) and np.isnan(o)) else float(o))
     with open(os.path.join(out_dir, "summary.txt"), "w") as f:
@@ -160,11 +193,13 @@ def main():
     ap.add_argument("--mask", default=None, help="optional mask image (white = ROI)")
     ap.add_argument("--register", action="store_true")
     ap.add_argument("--dark_body", action="store_true", help="body is DARKER than the background")
+    ap.add_argument("--roi", choices=["auto", "full"], default="auto",
+                    help="auto = find body on background; full = whole frame is skin (use for close-ups)")
     ap.add_argument("--no_video", action="store_true")
     ap.add_argument("--video_stride", type=int, default=1)
     a = ap.parse_args()
 
-    cfg = Config(register=a.register, body_is_brighter=not a.dark_body)
+    cfg = Config(register=a.register, body_is_brighter=not a.dark_body, roi_mode=a.roi)
     if a.synthetic is not None:
         from .synth import make_synthetic
         T, mask, info = make_synthetic(a.synthetic, fps=a.fps)

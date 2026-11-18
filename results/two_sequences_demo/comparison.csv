@@ -1,5 +1,0 @@
-sequence,phase,frames,mean_change,dir_arrival_deg,coherence_arrival,speed_arrival_px_s,dir_gradflow_deg,coherence_gradflow,methods_differ_deg
-seq1_P11_HR_dynamic,rewarming,63-203,0.498,59.729,0.995,6.071,53.087,0.632,6.642
-seq1_P11_HR_dynamic,cooling,18-63,-0.498,46.573,0.05,138.866,185.082,0.154,138.508
-seq2_P12_HR_dynamic,rewarming,63-208,0.482,199.8,0.995,6.072,198.075,0.651,1.725
-seq2_P12_HR_dynamic,cooling,18-63,-0.483,0.434,0.023,136.032,34.133,0.185,33.699

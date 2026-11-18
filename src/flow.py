@@ -16,6 +16,7 @@ Angle convention used everywhere: 0 deg = right, 90 deg = up, 180 = left, 270 = 
 """
 import numpy as np
 import cv2
+from scipy import ndimage
 
 
 # ---------------------------------------------------------------- helpers
@@ -161,6 +162,65 @@ def aggregate_lk(Ts, slope, mask, t0, t1, win=15, step=8, stride=1, sigma_space=
     mvx = np.where(sw > 0, sx / np.maximum(sw, 1e-12), np.nan)
     mvy = np.where(sw > 0, sy / np.maximum(sw, 1e-12), np.nan)
     return mvx.astype(np.float32), mvy.astype(np.float32), sw.astype(np.float32), samples
+
+
+# ---------------------------------------------------------------- foci (radial / multi-centre patterns)
+def find_foci(ta_s, kind="min", size=15, max_n=5, frac=0.35):
+    """
+    Candidate recovery foci on the arrival-time map.
+      kind="min": SOURCES  = places that recover EARLIEST (local minima of arrival time)
+      kind="max": SINKS    = places that recover LATEST   (local maxima)
+    Returns a list of (x, y, arrival_time_s). At most max_n foci, at least `size` pixels apart; a source must
+    belong to the earliest `frac` of the map (a sink to the latest `frac`).
+    """
+    ok = np.isfinite(ta_s)
+    if ok.sum() < 50:
+        return []
+    q = np.nanquantile(ta_s[ok], frac if kind == "min" else 1 - frac)
+    fill = np.where(ok, ta_s, np.inf if kind == "min" else -np.inf)
+    ext = ndimage.minimum_filter(fill, size=size) if kind == "min" else ndimage.maximum_filter(fill, size=size)
+    cand = ok & (fill == ext) & ((fill <= q) if kind == "min" else (fill >= q))
+    ys, xs = np.nonzero(cand)
+    order = np.argsort(ta_s[ys, xs]) if kind == "min" else np.argsort(-ta_s[ys, xs])
+    pts = []
+    for i in order:
+        p = (int(xs[i]), int(ys[i]))
+        if all(np.hypot(p[0] - a[0], p[1] - a[1]) >= size for a in pts):
+            pts.append(p)
+        if len(pts) >= max_n:
+            break
+    return [(x, y, float(ta_s[y, x])) for x, y in pts]
+
+
+def focal_alignment(gx, gy, good, foci, outward=True, min_r=3):
+    """
+    How well do the arrows point AWAY from the nearest source (outward=True) or TOWARD the nearest sink
+    (outward=False)?  +1 = every arrow does, 0 = no relation, -1 = the opposite.
+    """
+    if not foci or good.sum() == 0:
+        return np.nan
+    ys, xs = np.nonzero(good)
+    P = np.stack([xs, ys], 1).astype(float)
+    S = np.array([[f[0], f[1]] for f in foci], float)
+    d2 = ((P[:, None, :] - S[None]) ** 2).sum(-1)
+    k = d2.argmin(1)
+    dist = np.sqrt(d2[np.arange(len(P)), k])
+    keep = dist >= min_r
+    if keep.sum() < 10:
+        return np.nan
+    r = (P - S[k])[keep] / dist[keep, None]
+    g = np.stack([gx[ys, xs], gy[ys, xs]], 1)[keep]
+    g = g / (np.linalg.norm(g, axis=1, keepdims=True) + 1e-12)
+    a = (g * r).sum(1)
+    return float(np.mean(a if outward else -a))
+
+
+def classify_pattern(R, out_idx, conv_idx, r_thr=0.6, foc_thr=0.5):
+    """'uniform' = one dominant direction; 'focal' = spreads from early foci to late foci; else 'mixed'."""
+    if R >= r_thr:
+        return "uniform"
+    best = max([v for v in (out_idx, conv_idx) if np.isfinite(v)] or [-1])
+    return "focal" if best >= foc_thr else "mixed"
 
 
 # ---------------------------------------------------------------- summary

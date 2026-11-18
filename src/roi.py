@@ -42,3 +42,16 @@ def load_mask(path, shape):
     m = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     m = cv2.resize(m, (shape[1], shape[0]), interpolation=cv2.INTER_NEAREST)
     return m > 127
+
+
+def full_roi(shape, erode_px=3):
+    """
+    Whole image is skin (typical for close-up recordings such as DIRT-SR38, where the skin fills the frame and
+    there is no 'body vs background' to separate). Only a thin border is removed, because spatial gradients
+    computed at the image edge are unreliable.
+    """
+    m = np.ones(shape, bool)
+    if erode_px > 0:
+        m[:erode_px] = m[-erode_px:] = False
+        m[:, :erode_px] = m[:, -erode_px:] = False
+    return m

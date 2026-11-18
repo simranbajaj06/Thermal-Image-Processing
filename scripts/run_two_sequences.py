@@ -36,6 +36,7 @@ ap.add_argument("--out", default="results/two_sequences")
 ap.add_argument("--video_stride", type=int, default=5)
 ap.add_argument("--register", action="store_true")
 ap.add_argument("--dark_body", action="store_true")
+ap.add_argument("--roi", choices=["auto", "full"], default="auto", help="full = whole frame is skin (close-ups)")
 a = ap.parse_args()
 
 if a.root and a.subjects:
@@ -50,14 +51,16 @@ for k, path in enumerate(paths, 1):
     name = f"seq{k}_" + "_".join(norm.split(os.sep)[-3:])
     print(f"\n######## {name} ########")
     T, files = io_utils.load_sequence(path, a.stride, a.max_frames, a.scale)
-    cfg = pipeline.Config(register=a.register, body_is_brighter=not a.dark_body)
+    cfg = pipeline.Config(register=a.register, body_is_brighter=not a.dark_body, roi_mode=a.roi)
     res = pipeline.run(T, a.fps / a.stride, os.path.join(a.out, name), name, cfg=cfg, video_stride=a.video_stride)
     results[name] = res
     for phase, pr in res["phase_results"].items():
         rows.append(dict(sequence=name, phase=phase, frames=f"{pr['a']}-{pr['b']}", mean_change=pr["mean_change"],
                          dir_arrival_deg=pr["statsB"]["mean_deg"], coherence_arrival=pr["statsB"]["R"],
                          speed_arrival_px_s=pr["speedB_med"], dir_gradflow_deg=pr["statsA"]["mean_deg"],
-                         coherence_gradflow=pr["statsA"]["R"], methods_differ_deg=pr["agreement_deg"]))
+                         coherence_gradflow=pr["statsA"]["R"], methods_differ_deg=pr["agreement_deg"],
+                         pattern=pr["pattern"], early_foci=len(pr["sources"]), late_foci=len(pr["sinks"]),
+                         outward_alignment=pr["outward_alignment"], convergence_alignment=pr["convergence_alignment"]))
 df = pd.DataFrame(rows).round(3)
 os.makedirs(a.out, exist_ok=True)
 df.to_csv(os.path.join(a.out, "comparison.csv"), index=False)

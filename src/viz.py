@@ -75,7 +75,12 @@ def save_summary_figure(res, path, name="sequence"):
         g = pr["B"]
         _draw_dir_arrows(ax, xs, ys, g["gx"][ys, xs] * np.where(g["good"][ys, xs], 1, np.nan),
                          g["gy"][ys, xs] * np.where(g["good"][ys, xs], 1, np.nan), color="red")
-        ax.set_title("METHOD B: arrival-time of the warming front\n(white lines = same time, red arrows = direction)", fontsize=10)
+        for (x, y, _t) in pr["sources"]:
+            ax.plot(x, y, "*", ms=16, mfc="white", mec="k", mew=1.2)
+        for (x, y, _t) in pr["sinks"]:
+            ax.plot(x, y, "X", ms=11, mfc="k", mec="white", mew=1.0)
+        ax.set_title("METHOD B: arrival-time of the warming front\n(white lines = same time, red arrows = direction,\n"
+                     "star = earliest-recovery focus, X = latest-recovery focus)", fontsize=9)
 
     ax = axs[1, 0]
     t = np.arange(len(res["curve"])) / fps

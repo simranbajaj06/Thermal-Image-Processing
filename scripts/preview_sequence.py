@@ -41,6 +41,11 @@ if stretched > 90:
           "PER FRAME; absolute changes over time are then unreliable. Read the dataset paper (preprocessing section).")
 
 mask = roi.auto_roi(T, body_is_brighter=not dark_body)
+if mask.mean() < 0.35:
+    print(f"\n!! The automatic ROI covers only {mask.mean() * 100:.0f}% of the image. If the skin fills the whole frame "
+          "(close-up recording, no background) use the FULL-FRAME ROI: add  --roi full  to every analysis command.")
+    mask_full = roi.full_roi(T.shape[1:])
+    print(f"   Full-frame ROI curve: start={T[:, mask_full].mean(1)[:5].mean():.3f}  end={T[:, mask_full].mean(1)[-5:].mean():.3f}")
 curve = T[:, mask].mean(1)
 print(f"ROI    : {mask.mean() * 100:.0f}% of the image. ROI mean: start={curve[:5].mean():.3f}  "
       f"min={curve.min():.3f} (frame {curve.argmin()})  end={curve[-5:].mean():.3f}")

@@ -134,9 +134,6 @@ predict the error on real skin.*
 
 ### 5.2 Results on two real sequences (DIRT-SR38)
 
-> Fill this table from your own run: `results/two_sequences/comparison.csv` and each `summary.txt`
-> (`python scripts/make_report.py` prints the same numbers in the report).
-
 | Sequence | Frames / fps | ROI | Pattern class | Direction (B) / R | Direction (A) / R | Speed (B) | Early / late foci |
 |---|---|---|---|---|---|---|---|
 | P11 (HR, dynamic) | ... | full | ... | ... | ... | ... | ... |

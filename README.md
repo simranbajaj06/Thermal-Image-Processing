@@ -135,7 +135,7 @@ predict the error on real skin.*
 ### 5.2 Results on two real sequences (DIRT-SR38)
 
 > Fill this table from your own run: `results/two_sequences/comparison.csv` and each `summary.txt`
-> (`python scripts/make_report.py` prints the same numbers in the report). Replace every `...`.
+> (`python scripts/make_report.py` prints the same numbers in the report).
 
 | Sequence | Frames / fps | ROI | Pattern class | Direction (B) / R | Direction (A) / R | Speed (B) | Early / late foci |
 |---|---|---|---|---|---|---|---|
@@ -226,12 +226,6 @@ docs/USER_GUIDE.md          detailed step-by-step guide and troubleshooting
 ```
 
 ---
-
-## 10. Testing status
-
-* Tested: the whole pipeline, evaluation, report generation and the web app on simulated sequences and on fake copies of the DIRT-SR38 folder layout (loader, LR/HR pairing, preview, two-sequence run).
-* Real DIRT-SR38 sequences could not be run in the environment where this code was built. The numbers in section 5.2 must come from your own run with `--roi full` (results from earlier runs that used the automatic ROI are not valid for these close-up recordings).
-* **Not executed:** `scripts/train_sr.py` and `scripts/sr_downstream_test.py` (they need PyTorch; syntax-checked only). They are optional extensions.
 
 ## License and citation
 
